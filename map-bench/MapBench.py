@@ -3,10 +3,11 @@ from com.android.monkeyrunner import MonkeyRunner, MonkeyDevice
 import time
 import sys
 
-APK_PATH = '/Users/stone/Projects/Sestet-Bench/map-bench/baiduditu.apk'
+APK_PATH = 'baiduditu.apk'
 IMAGE_PATH = '/Users/stone/Projects/Sestet-Bench/map-bench/'
 PKG_NAME = 'com.baidu.BaiduMap'
 ACTIVITY = 'com.baidu.BaiduMap.map.mainmap.MainMapActivity'
+SATELLITE = True
 
 # Connects to the current device, returning a MonkeyDevice object
 device = MonkeyRunner.waitForConnection()
@@ -22,7 +23,7 @@ def touchDownUp(x_rate, y_rate, interval = 0.5):
     device.touch(x, y, MonkeyDevice.DOWN_AND_UP)
     return
 
-NUM_SNAP = 12
+NUM_SNAP = 11
 targets = [None] * NUM_SNAP
 
 def takeSnapshot():
@@ -42,7 +43,7 @@ def recordTarget(index, interval = 5):
     state.writeToFile(IMAGE_PATH + 'MapBenchSnapshot' + str(index) + '.png') 
     return
 
-def finishOperation(index, threshod = 0.96, interval = 0.5):
+def finishOperation(index, threshod = 0.95, interval = 0.5):
     MonkeyRunner.sleep(interval)
     state = takeSnapshot()
     while (not targets[index].sameAs(state, threshod)):
@@ -68,10 +69,31 @@ def operateMap(init=False):
     touchDownUp(0.96, 0.07, 1)
     # cancels further setting
     touchDownUp(0.76, 0.48, 1)
-    # turns off the real traffic
-    touchDownUp(0.92, 0.17, 2)
+  
+    # enters setting
+    MonkeyRunner.sleep(2)
+    device.press('KEYCODE_BACK', MonkeyDevice.DOWN_AND_UP)
+    MonkeyRunner.sleep(0.5)
+    device.press('KEYCODE_MENU', MonkeyDevice.DOWN_AND_UP)
+    touchDownUp(0.32, 0.81)
+    # sets options
+    MonkeyRunner.sleep(0.5)
+    touchDownUp(0.5, 0.14)
+    touchDownUp(0.5, 0.26)
+    touchDownUp(0.5, 0.39)
+    touchDownUp(0.5, 0.51)
+    MonkeyRunner.sleep(0.5)
+    device.press('KEYCODE_BACK', MonkeyDevice.DOWN_AND_UP)
+
+    if SATELLITE:
+        MonkeyRunner.sleep(0.5)
+        device.press('KEYCODE_MENU', MonkeyDevice.DOWN_AND_UP)
+        touchDownUp(0.14, 0.73)
+        MonkeyRunner.sleep(0.5)
+        touchDownUp(0.5, 0.2)
+
     # touches the input box
-    touchDownUp(0.4, 0.08, 1)
+    touchDownUp(0.4, 0.08)
     # inputs place
     MonkeyRunner.sleep(2)
     device.type("Tsinghua")
@@ -94,7 +116,7 @@ def operateMap(init=False):
         # restore
         touchDownUp(0.92, 0.83)
 
-    for i in range(7):
+    for i in range(6):
         index += 1
         touchDownUp(0.92, 0.83)
         waitToFinish(index, init)
@@ -102,6 +124,7 @@ def operateMap(init=False):
 
 # Main
 device.installPackage(APK_PATH)
+MonkeyRunner.sleep(1)
 operateMap(True)
 device.removePackage(PKG_NAME)
 
@@ -113,12 +136,12 @@ for i in range(6):
 
     if i % 2 == 0:
         device.installPackage(APK_PATH)
-        MonkeyRunner.sleep(2)
+        MonkeyRunner.sleep(1)
         operateMap()
         device.removePackage(PKG_NAME)
     else:
         device.installPackage(APK_PATH)
-        MonkeyRunner.sleep(2)
+        MonkeyRunner.sleep(1)
         device.shell('mv /data/data/com.baidu.BaiduMap/* /data/data/com.baidu.BaiduMap.bak/')
         device.shell('mount -t ramfs none /data/data/com.baidu.BaiduMap')
         device.shell('chmod a+rwx /data/data/com.baidu.BaiduMap')
