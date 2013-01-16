@@ -54,7 +54,7 @@ def operateFB():
   
     touchDownUp(0.5, 0.41)
     MonkeyRunner.sleep(0.5)
-    device.type('jinglei.ren@gmail.com')
+    device.type('yanruiying@gmail.com')
     touchDownUp(0.5, 0.28)
     device.type('J8d5b324')
     touchDownUp(0.5, 0.38)
@@ -72,10 +72,14 @@ def operateFB():
             dragVertically(0.9, 0.23)
         waitToFinish(0.3, 0.89, 0.4, 0.1, 0.2)
         print "[Sestet] \t%d \t%f" % (t + 1, time.time() - begin)
-
+    end = time.time()
+    print "[Sestet] \t%f \t%f" % (begin - g_begin, end - g_begin)
+    MonkeyRunner.sleep(5)
     return
 
 # Main
+print "Main begins."
+g_begin = time.time()
 PKG_NAME_BAK = PKG_NAME + '.bak'
 device.shell('rmdir /data/data/' + PKG_NAME)
 check = device.shell('cd /data/data/' + PKG_NAME_BAK)

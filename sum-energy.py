@@ -3,28 +3,40 @@ import string
 
 INTERVAL = 0.0002
 
-if len(sys.argv) != 4:
-    print "Usage: python %s FileName StartTime EndTime" % sys.argv[0]
-    sys.exit(-1)
-
-file = sys.argv[1]
-startTime = float(sys.argv[2])
-endTime = float(sys.argv[3])
-
-fp = open(file, 'r')
-fp.readline() # skips the field names
-
-uAs = 0
-for line in fp:
+def fetch_on(fp, start, end):
+  sum = 0
+  while True:
+    line = fp.readline()
+    if not line:
+      break
     segments = string.split(line, ',')
     time = float(segments[0])
-    if time < startTime:
-        continue
-    if time >= endTime:
-        break
-    mW = float(segments[1])
+    if time < start:
+      continue
+    if time >= end:
+      break
+    mA = float(segments[1])
     V = float(segments[2])
-    uAs += mW / V * 1000 * INTERVAL
+    sum += mA * V;
+  
+  sum *= INTERVAL
+  return sum
 
-uAh = uAs / 3600
-print "Sum of Energy (uAh): \t%f" % uAh
+# Main
+if len(sys.argv) != 3:
+  print "Usage: python %s LogFile IntervalFile" % sys.argv[0]
+  sys.exit(-1)
+
+log = sys.argv[1]
+intervals = sys.argv[2]
+
+log_file = open(log, 'r')
+int_file = open(intervals, 'r')
+
+line = log_file.readline() # skips the field names
+for line in int_file:
+  segments = string.split(line, '\t')
+  start = float(segments[0])
+  end = float(segments[1])
+  print fetch_on(log_file, start, end)
+
