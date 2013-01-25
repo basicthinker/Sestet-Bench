@@ -47,7 +47,8 @@ for i in range(12):
   print "Trial %d:" % (i + 1)
   check = device.shell('cd /data/data/' + PKG_NAME)
   if check.find('can\'t') < 0:
-    sys.exit("Error: installation directory exists.")
+    print "Error: installation directory exists."
+    sys.exit(-1)
   
   if i % 2 == 0:
     device.installPackage(APK_PATH)
