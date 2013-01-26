@@ -1,10 +1,11 @@
 import sys
+from collections import defaultdict
 
 class Func:
   "store a function info"
   def __init__(self, parent, str):
     self.parent = parent
-    self.children = ()
+    self.children = []
     
     segs = str.split()
     self.time = float(segs[0])
@@ -16,13 +17,24 @@ class Func:
     else:
       self.duration = 0
       self.name = segs[-2]
+    return
 
-proc_list = [] # contains trees of functions
-func_list = () # contains functions in time order
+  def Print(self):
+    if self.parent is None:
+      parent = "root"
+    else:
+      parent = self.parent.name
+
+    print "Func: name=%s, parent=%s, time=%f, cpu=%d, proc=%s, duration=%f" \
+        % (self.name, parent, self.time, self.cpu, self.proc, self.duration)
+    return
+
+proc_list = defaultdict(list) # contains trees of functions
+func_list = [] # contains functions in time order
 
 # Return new parent for the next line
 def do_process(parent, line):
-  if line[-1] == '}' or line[-1] == '/':
+  if line[-2] == '}' or line[-2] == '/':
     segs = line.split()
     parent.duration = float(segs[5])
     return parent.parent
@@ -35,9 +47,9 @@ def do_process(parent, line):
   else:
     parent.children.append(func)
   
-  if line[-1] == '{':
+  if line[-2] == '{':
     return func
-  elif line[-1] == ';':
+  elif line[-2] == ';':
     return parent
   else:
     print "[Error] do_process: %s" % line
@@ -55,9 +67,8 @@ for i in range(5):
 # skips partial trace
 while True:
   line = trace.readline()
-  print line
   segs = line.split('|')
-  if segs[-1][2] == ' ' or segs[-1][-1] != '{':
+  if segs[-1][2] == ' ' or segs[-1][-2] == '}' or segs[-1][-2] == '/':
     continue
   else:
     break
@@ -65,6 +76,9 @@ while True:
 parent = do_process(None, line)
 
 for line in trace:
-  if line[-1] == '|':
+  if len(line) < 2 or line[-2] == '|':
     continue
   parent = do_process(parent, line)
+
+for func in func_list:
+  func.Print()
