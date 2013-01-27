@@ -5,42 +5,52 @@ class Func:
   def __init__(self, line = None):
     self.children = []
     
-    if line is None:
-      self.__parent = None
+    if line is None: # happens in default dict
+      self.__parent = self # indicates an abstract root node
       self.name = 'root'
-      self.proc = None
+      self.proc = None # set after initialization
       self.cur_parent = self
       return
 
-    segs = line.split()
+    self.__parent = None
+    segs = line.split('|')
     self.time = float(segs[0])
-    self.cpu = int(segs[2][0:-1])
-    self.proc = segs[3]
-    
-    if self.proc == '<idle>-0':
+  
+    cpu_proc = segs[1].split(')')
+    self.cpu = int(cpu_proc[0])
+    self.proc = cpu_proc[1].strip()
+    if self.proc == '<idle>-0': # as every processor has an idle process
       self.proc = str(self.cpu) + self.proc
     
-    if segs[-3] == 'us':
-      self.duration = float(segs[5])
-      if line[-2] == '}' or line[-2] == '/':
-        self.name = None
+    time_unit = segs[2].split()
+    if len(time_unit) > 0: # containing time
+      self.duration = float(time_unit[0])
+      if segs[-1].rstrip()[-1] == '}' or segs[-1].rstrip()[-1] == '/':
+        self.name = None # indicates a closing bracket
       else:
-        self.name = segs[-1].rstrip(';')
-    else:
+        self.name = segs[-1].strip(' ;\n')
+    elif segs[-1].rstrip()[-1] == '{': # containing an opening bracket
       self.duration = 0
-      self.name = segs[-2]
+      self.name = segs[-1].strip(' {\n')
+    else:
+      print "[Error] Func.__init__() meets invalid line: %s" % line
+      sys.exit(-1)
     return
 
   def is_root(self):
-    return self.__parent is None
+    return self.__parent == self
       
   def get_parent(self):
     return self.__parent
 
   def set_parent(self, parent):
-    self.__parent = parent
-    parent.children.append(self)
-      
+    if self.__parent is None:
+      self.__parent = parent
+      parent.children.append(self)
+    else:
+      print "[Error] Func.set_parent() duplicated: %s" % self.name
+      sys.exit(-1)
+
   def to_string(self):
     if self.is_root():
       return "root of %s" % self.proc
@@ -48,43 +58,53 @@ class Func:
       return "Func: name=%s, parent=%s, time=%f, cpu=%d, proc=%s, duration=%f" \
           % (self.name, self.__parent.name, \
              self.time, self.cpu, self.proc, self.duration)
+# Func
 
 proc_dict = defaultdict(Func) # contains trees of functions
 func_list = [] # contains functions in time order
 
+def find_root(func):
+  root = proc_dict[func.proc]
+  root.proc = func.proc # in case the first access to defaultdict
+  return root
+
+def cur_parent(func):
+  root = find_root(func)
+  return root.cur_parent
+
 # Return new parent for the next line
 def do_process(parent, line):
- 
+
   func = Func(line)
 
-  if parent is None:
-    parent = proc_dict[func.proc]
-    parent.proc = func.proc
-  elif func.proc != parent.proc:
-    proc_dict[parent.proc].cur_parent = parent
-    root = proc_dict[func.proc]
-    parent = root.cur_parent
-    root.proc = func.proc # in case the first access
-
-  if func.name is None:
+  # change parent if necessary
+  if parent is None: # only happens in first call
+    parent = find_root(func)
+  elif func.proc != parent.proc: # happens when switching context
+    find_root(parent).cur_parent = parent
+    parent = cur_parent(func)
+  
+  if func.name is None: # closing bracket
     parent.duration = func.duration
     return parent.get_parent()
   else:
     func.set_parent(parent)
-    if line[-2] == '{':
+    func_list.append(func)
+    if line.rstrip()[-1] == '{':
       return func
-    elif line[-2] == ';':
-      return func.get_parent()
+    elif line.rstrip()[-1] == ';':
+      return parent
     else:
       print "[Error] do_process: %s" % line
       sys.exit(-1)
 
 def skip_partial(trace):
-  while True:
-    line = trace.readline()
+  line = trace.readline()
+  while line:
     segs = line.split('|')
-    if segs[-1][2] == ' ' or segs[-1][-2] == '}' or segs[-1][-2] == '/':
-      continue
+    if len(segs[-1]) < 3 or segs[-1][2] == ' ' or \
+        segs[-1].rstrip()[-1] == '}' or segs[-1].rstrip()[-1] == '/':
+      line = trace.readline()
     else:
       break
   return line
@@ -96,27 +116,39 @@ trace = open(file, 'r')
 
 # skips partial trace
 line = skip_partial(trace)
+if not line:
+  print "No valid lines."
+  sys.exit(0)
 
 parent = do_process(None, line)
 
 line = trace.readline()
+
+line_count = 0
 while line:
   if len(line) > 2:
-    if line[-2] == ']':
-      print line
+    if line.rstrip()[-1] == ']':
+      print line.rstrip()
       line = skip_partial(trace)
       continue
-    elif line[-2] == '-':
+    elif line.rstrip()[-1] == '-':
       trace.readline() # skips context switch info
       trace.readline()
-    elif line[-2] != '|':
+    elif line.rstrip()[-1] != '|':
       parent = do_process(parent, line)
   line = trace.readline()
+  line_count += 1
+  if line_count % 10000 == 0:
+    print "... Finishing %d lines ..." % line_count
+
+# Prints the function sequence
+for func in func_list:
+  print func.to_string()
 
 # Prints the highest level functions
 for proc in proc_dict.keys():
   root = proc_dict[proc]
-  func_set = set()
+  func_stat = defaultdict(list)
   for func in root.children:
-    func_set.add(func.name)
-  print "%s\n%s" % (proc, func_set)
+    func_stat[func.name].append(func.duration)
+  print "%s\n%s" % (proc, func_stat)
