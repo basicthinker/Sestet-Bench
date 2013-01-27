@@ -33,7 +33,8 @@ class Func:
       self.duration = 0
       self.name = segs[-1].strip(' {\n')
     else:
-      print "[Error] Func.__init__() meets invalid line: %s" % line
+      sys.stderr.write("[Error] Func.__init__() meets invalid line: %s\n" \
+                       % line)
       sys.exit(-1)
     return
 
@@ -48,7 +49,7 @@ class Func:
       self.__parent = parent
       parent.children.append(self)
     else:
-      print "[Error] Func.set_parent() duplicated: %s" % self.name
+      sys.stderr.write("[Error] Func.set_parent() duplicated: %s\n" % self.name)
       sys.exit(-1)
 
   def to_string(self):
@@ -72,8 +73,10 @@ def cur_parent(func):
   root = find_root(func)
   return root.cur_parent
 
+num_under_func = 0
 # Return new parent for the next line
 def do_process(parent, line):
+  global num_under_func
 
   func = Func(line)
 
@@ -85,7 +88,10 @@ def do_process(parent, line):
     parent = cur_parent(func)
   
   if func.name is None: # closing bracket
-    parent.duration = func.duration
+    if parent.is_root():
+      num_under_func += 1
+    else:
+      parent.duration = func.duration
     return parent.get_parent()
   else:
     func.set_parent(parent)
@@ -95,16 +101,21 @@ def do_process(parent, line):
     elif line.rstrip()[-1] == ';':
       return parent
     else:
-      print "[Error] do_process: %s" % line
+      sys.stderr.write("[Error] do_process: %s\n" % line)
       sys.exit(-1)
 
+num_skipped = 0
 def skip_partial(trace):
-  line = trace.readline()
-  while line:
+  global num_skipped
+  while True:
+    line = trace.readline()
     segs = line.split('|')
-    if len(segs[-1]) < 3 or segs[-1][2] == ' ' or \
+    if len(segs[-1]) < 3:
+      continue
+    elif segs[-1][2] == ' ' or \
         segs[-1].rstrip()[-1] == '}' or segs[-1].rstrip()[-1] == '/':
-      line = trace.readline()
+      num_skipped += 1
+      continue
     else:
       break
   return line
@@ -138,12 +149,14 @@ while line:
       parent = do_process(parent, line)
   line = trace.readline()
   line_count += 1
-  if line_count % 10000 == 0:
-    print "... Finishing %d lines ..." % line_count
+  if line_count % 50000 == 0:
+    sys.stderr.write("... Finishing %d lines ...\n" % line_count)
 
 # Prints the function sequence
 for func in func_list:
   print func.to_string()
+print "Number of skipped lines: %d" % num_skipped
+print "Number of partial functions (without headers): %d" % num_under_func
 
 # Prints the highest level functions
 for proc in proc_dict.keys():
