@@ -197,7 +197,7 @@ while line:
 for func in func_list:
   print func.to_string()
 print "Number of skipped lines: %d" % num_skipped
-print "Number of partial functions (without headers): %d" % num_partial_exit
+print "Number of partial function exits: %d" % num_partial_exit
 
 # Prints the highest level functions
 for proc in proc_dict.keys():
@@ -208,5 +208,5 @@ for proc in proc_dict.keys():
   print "%s\n%s" % (proc, func_stat)
 
   for func in root.broken_entries:
-    print "Broken Func: %s" % func.to_string()
+    print "Broken Entry: %s" % func.to_string()
 
