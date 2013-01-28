@@ -161,52 +161,33 @@ def skip_partial(trace):
       break
   return line
 
-# Main
+def parse_file(file):
+  trace = open(file, 'r')
 
-file = sys.argv[-1]
-trace = open(file, 'r')
+  # skips partial trace
+  line = skip_partial(trace)
+  if not line:
+    print "No valid lines."
+    sys.exit(0)
 
-# skips partial trace
-line = skip_partial(trace)
-if not line:
-  print "No valid lines."
-  sys.exit(0)
+  parent = do_process(None, line)
 
-parent = do_process(None, line)
-
-line = trace.readline()
-
-line_count = 0
-while line:
-  if len(line) > 2:
-    if line.rstrip()[-1] == ']':
-      print line.rstrip()
-      line = skip_partial(trace)
-      continue
-    elif line.rstrip()[-1] == '-':
-      trace.readline() # skips context switch info
-      trace.readline()
-    elif line.rstrip()[-1] != '|':
-      parent = do_process(parent, line)
   line = trace.readline()
-  line_count += 1
-  if line_count % 50000 == 0:
-    sys.stderr.write("... Finishing %d lines ...\n" % line_count)
 
-# Prints the function sequence
-for func in func_list:
-  print func.to_string()
-print "Number of skipped lines: %d" % num_skipped
-print "Number of partial function exits: %d" % num_partial_exit
-
-# Prints the highest level functions
-for proc in proc_dict.keys():
-  root = proc_dict[proc]
-  func_stat = defaultdict(list)
-  for func in root.children:
-    func_stat[func.name].append(func.duration)
-  print "%s\n%s" % (proc, func_stat)
-
-  for func in root.broken_entries:
-    print "Broken Entry: %s" % func.to_string()
+  line_count = 0
+  while line:
+    if len(line) > 2:
+      if line.rstrip()[-1] == ']':
+        print line.rstrip()
+        line = skip_partial(trace)
+        continue
+      elif line.rstrip()[-1] == '-':
+        trace.readline() # skips context switch info
+        trace.readline()
+      elif line.rstrip()[-1] != '|':
+        parent = do_process(parent, line)
+    line = trace.readline()
+    line_count += 1
+    if line_count % 50000 == 0:
+      sys.stderr.write("... Finishing %d lines ...\n" % line_count)
 
