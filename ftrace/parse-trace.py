@@ -10,6 +10,8 @@ class Func:
       self.name = 'root'
       self.proc = None # set after initialization
       self.cur_parent = self
+      self.depth = 0
+      self.broken_entries = []
       return
 
     self.__parent = None
@@ -24,18 +26,34 @@ class Func:
     
     time_unit = segs[2].split()
     if len(time_unit) > 0: # containing time
-      self.duration = float(time_unit[0])
+      if time_unit[1] == 'us':
+        self.duration = float(time_unit[0])
+      elif time_unit[1] == 'ms':
+        self.duration = float(time_unit[0]) * 1000
+      else:
+        sys.stderr.write("[Error] Func.__init__ meets invalid time unit: %s\n" \
+                         % time_unit[1]);
+        sys.exit(-1)
+      
       if segs[-1].rstrip()[-1] == '}' or segs[-1].rstrip()[-1] == '/':
         self.name = None # indicates a closing bracket
+        self.entry_name = None
+        if segs[-1].rstrip()[-1] == '/':
+          self.entry_name = segs[-1].strip('} /*\n')
       else:
-        self.name = segs[-1].strip(' ;\n')
+        self.name = segs[-1].strip('() ;\n')
     elif segs[-1].rstrip()[-1] == '{': # containing an opening bracket
       self.duration = 0
-      self.name = segs[-1].strip(' {\n')
+      self.name = segs[-1].strip('() {\n')
     else:
       sys.stderr.write("[Error] Func.__init__() meets invalid line: %s\n" \
                        % line)
       sys.exit(-1)
+        
+    i = 0
+    while segs[-1][i] == ' ':
+      i += 1
+    self.depth = i / 2
     return
 
   def is_root(self):
@@ -56,9 +74,10 @@ class Func:
     if self.is_root():
       return "root of %s" % self.proc
     else:
-      return "Func: name=%s, parent=%s, time=%f, cpu=%d, proc=%s, duration=%f" \
+      return "Func: name=%s, parent=%s, time=%f, cpu=%d, proc=%s, " \
+          "duration=%f depth=%d" \
           % (self.name, self.__parent.name, \
-             self.time, self.cpu, self.proc, self.duration)
+             self.time, self.cpu, self.proc, self.duration, self.depth)
 # Func
 
 proc_dict = defaultdict(Func) # contains trees of functions
@@ -73,10 +92,10 @@ def cur_parent(func):
   root = find_root(func)
   return root.cur_parent
 
-num_under_func = 0
+num_partial_exit = 0
 # Return new parent for the next line
 def do_process(parent, line):
-  global num_under_func
+  global num_partial_exit
 
   func = Func(line)
 
@@ -87,18 +106,40 @@ def do_process(parent, line):
     find_root(parent).cur_parent = parent
     parent = cur_parent(func)
   
+  broken_entries = find_root(func).broken_entries
   if func.name is None: # closing bracket
-    if parent.is_root():
-      num_under_func += 1
-    else:
+    if func.entry_name:
+      # first check former unmatched function entries
+      for entry in broken_entries:
+        if func.entry_name == entry.name and func.depth == entry.depth:
+          entry.duration = func.duration
+          broken_entries.remove(entry)
+          return parent # as if this line is not meet
+      
+      while not parent.is_root() and parent.name != func.entry_name:
+        broken_entries.append(parent)
+        parent = parent.get_parent()
       parent.duration = func.duration
-    return parent.get_parent()
+      return parent.get_parent()
+    else:
+      if func.depth > parent.depth: # partial exit
+        num_partial_exit += 1
+        return parent
+      else:
+        while parent.depth > func.depth: # possible partial entry
+          broken_entries.append(parent)
+          parent = parent.get_parent()
+        parent.duration = func.duration
+        return parent.get_parent()
   else:
+    while parent.depth > func.depth - 1:
+      broken_entries.append(parent)
+      parent = parent.get_parent()
     func.set_parent(parent)
     func_list.append(func)
-    if line.rstrip()[-1] == '{':
+    if line.rstrip()[-1] == '{': # opening bracket
       return func
-    elif line.rstrip()[-1] == ';':
+    elif line.rstrip()[-1] == ';': # whole function
       return parent
     else:
       sys.stderr.write("[Error] do_process: %s\n" % line)
@@ -156,7 +197,7 @@ while line:
 for func in func_list:
   print func.to_string()
 print "Number of skipped lines: %d" % num_skipped
-print "Number of partial functions (without headers): %d" % num_under_func
+print "Number of partial functions (without headers): %d" % num_partial_exit
 
 # Prints the highest level functions
 for proc in proc_dict.keys():
@@ -165,3 +206,7 @@ for proc in proc_dict.keys():
   for func in root.children:
     func_stat[func.name].append(func.duration)
   print "%s\n%s" % (proc, func_stat)
+
+  for func in root.broken_entries:
+    print "Broken Func: %s" % func.to_string()
+
