@@ -12,12 +12,11 @@ CREATE TABLE IF NOT EXISTS `trials` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `processes` (
-	`id` int NOT NULL auto_increment,
+	`pid` int NOT NULL,
 	`name` char(63) NOT NULL,
-	`spec` char(255) NOT NULL,
+	`spec` char(255),
 	`trial_id` smallint NOT NULL,
-	PRIMARY KEY (`id`),
-	UNIQUE KEY (`name`),
+	PRIMARY KEY (`pid`, `trial_id`),
 	FOREIGN KEY (`trial_id`) REFERENCES `trials`(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -27,12 +26,13 @@ CREATE TABLE IF NOT EXISTS `functions` (
 	`parent` char(63) NOT NULL,
 	`time` double NOT NULL,
 	`cpu` smallint NOT NULL,
-	`proc_id` int NOT NULL,
+	`pid` int NOT NULL,
 	`duration` double NOT NULL,
+	`depth` tinyint NOT NULL,
 	`trial_id` smallint NOT NULL,
 	PRIMARY KEY (`id`),
-	FOREIGN KEY (`proc_id`) REFERENCES `processes`(`id`),
-	FOREIGN KEY (`trial_id`) REFERENCES `trials`(`id`)
+	FOREIGN KEY (`pid`, `trial_id`)
+	REFERENCES `processes`(`pid`, `trial_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DELIMITER //
@@ -51,12 +51,15 @@ END //
 
 DROP PROCEDURE IF EXISTS add_process //
 CREATE PROCEDURE add_process (
+	IN pid INT,
 	IN proc_name CHAR(63),
 	IN proc_spec CHAR(255),
 	IN trial_id INT
 )
 BEGIN
-	INSERT INTO `processes`(`name`, `spec`, `trial_id`) VALUES (
+	INSERT INTO `processes`(`pid`, `name`, `spec`, `trial_id`)
+	VALUES (
+		pid,
 		proc_name,
 		proc_spec,
 		trial_id
@@ -69,18 +72,16 @@ CREATE PROCEDURE add_function (
 	IN parent CHAR(63),
 	IN func_time DOUBLE,
 	IN cpu_num SMALLINT,
-	IN proc CHAR(63),
+	IN pid INT,
 	IN duration DOUBLE,
+	IN depth TINYINT,
 	IN trial_id SMALLINT
 )
 BEGIN
-	SELECT `id` INTO @proc_id FROM `processes`
-    WHERE `name` = proc AND `trial_id` = trial_id;
-
 	INSERT INTO `functions` VALUES (
 		NULL, func_name, parent,
-		func_time, cpu_num, @proc_id,
-		duration, trial_id		
+		func_time, cpu_num, pid,
+		duration, depth, trial_id
 	);
 END //
 

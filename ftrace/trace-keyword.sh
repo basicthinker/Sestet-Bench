@@ -30,14 +30,14 @@ cat $file | grep "/\*.*$keyword.*\*/" | awk '
     time=0;
   }
   {
-    if ($6 > 1000) {
+    if ($6 > 300) {
       num_lines+=1;
       time+=$6;
       print $0;
     }
   }
   END{
-    print "\nLong calls (> 1 ms):"
+    print "\nLong calls (> 300 us):"
     print "\tNumber of long-call lines: " num_lines
     print "\tTotal time of long calls: " time/1000 " ms"
     print "------"

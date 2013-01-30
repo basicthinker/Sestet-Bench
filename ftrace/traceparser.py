@@ -8,8 +8,12 @@ class Func:
     if line is None: # happens in default dict
       self.__parent = self # indicates an abstract root node
       self.name = 'root'
+      self.time = 0
+      self.cpu = -1
       self.proc = None # set after initialization
+      self.pid = -1
       self.cur_parent = self
+      self.duration = 0
       self.depth = 0
       self.broken_entries = []
       return
@@ -18,11 +22,13 @@ class Func:
     segs = line.split('|')
     self.time = float(segs[0])
   
-    cpu_proc = segs[1].split(')')
-    self.cpu = int(cpu_proc[0])
-    self.proc = cpu_proc[1].strip()
-    if self.proc == '<idle>-0': # as every processor has an idle process
-      self.proc = str(self.cpu) + self.proc
+    cpu_proc_pid = segs[1].split(')')
+    self.cpu = int(cpu_proc_pid[0])
+    proc_pid = cpu_proc_pid[1].strip().split('-')
+    self.proc = proc_pid[0]
+    self.pid = int(proc_pid[1])
+    if self.proc == '<idle>': # as every processor has an idle process
+      self.proc = str(self.cpu) + '-' + self.proc
     
     time_unit = segs[2].split()
     if len(time_unit) > 0: # containing time
@@ -74,10 +80,10 @@ class Func:
     if self.is_root():
       return "root of %s" % self.proc
     else:
-      return "Func: name=%s, parent=%s, time=%f, cpu=%d, proc=%s, " \
-          "duration=%f depth=%d" \
-          % (self.name, self.__parent.name, \
-             self.time, self.cpu, self.proc, self.duration, self.depth)
+      return "Func: name=%s, parent=%s, time=%f, cpu=%d, " \
+          "proc=%s, pid=%d, duration=%f depth=%d" \
+          % (self.name, self.__parent.name, self.time, self.cpu, \
+             self.proc, self.pid, self.duration, self.depth)
 # Func
 
 proc_dict = defaultdict(Func) # contains trees of functions
