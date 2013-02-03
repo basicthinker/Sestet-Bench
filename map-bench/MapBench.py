@@ -8,6 +8,7 @@ IMAGE_PATH = './'
 PKG_NAME = 'com.baidu.BaiduMap'
 ACTIVITY = 'com.baidu.BaiduMap.map.mainmap.MainMapActivity'
 SATELLITE = False
+CLEAR = False
 
 # Connects to the current device, returning a MonkeyDevice object
 device = MonkeyRunner.waitForConnection()
@@ -16,7 +17,7 @@ width = int(device.getProperty("display.width"))
 height = int(device.getProperty("display.height"))
 
 # Wrapper function for touching a point down and up
-def touchDownUp(x_rate, y_rate, interval = 1):
+def touchDownUp(x_rate, y_rate, interval = 0.5):
   MonkeyRunner.sleep(interval)
   x = int(width * x_rate)
   y = int(height * y_rate)
@@ -68,16 +69,12 @@ def operateMap(init=False):
     MonkeyRunner.sleep(0.5)
     device.press('KEYCODE_MENU', MonkeyDevice.DOWN_AND_UP)
     touchDownUp(0.14, 0.73)
-    MonkeyRunner.sleep(0.5)
     touchDownUp(0.5, 0.2)
-  
-  print "20 seconds for your check."
-  MonkeyRunner.sleep(20)
   
   # touches the input box
   touchDownUp(0.4, 0.08, 4)
   # inputs place
-  MonkeyRunner.sleep(3)
+  MonkeyRunner.sleep(2)
   device.type("Tsinghua")
   MonkeyRunner.sleep(5)
   
@@ -110,17 +107,27 @@ def operateMap(init=False):
   
   device.press('KEYCODE_MENU', MonkeyDevice.DOWN_AND_UP)
   touchDownUp(0.85, 0.84)
-  touchDownUp(0.2, 0.33)
+  touchDownUp(0.2, 0.6)
   MonkeyRunner.sleep(5)
   return
 
 # Main
 # This version assumes that BaiduMap has been installed and configured.
-check = device.shell('cd /data/data/com.baidu.BaiduMap')
-if check.find('can\'t') > 0:
-  device.installPackage(APK_PATH)
-  print "Two minutes for your config."
-  MonkeyRunner.sleep(120)
+
+if CLEAR:
+  print "Bakcup current config and data."
+  device.shell('mkdir -p /data/data/com.baidu.BaiduMap.bak')
+  device.shell('mkdir -p /sdcard/BaiduMap.bak')
+  device.shell('busybox cp -r /data/data/com.baidu.BaiduMap/* /data/data/com.baidu.BaiduMap.bak/')
+  device.shell('busybox cp -r /sdcard/BaiduMap/* /sdcard/BaiduMap.bak/')
+else:
+  print "Restore former config and data."
+  device.shell('rm -r /data/data/com.baidu.BaiduMap/*')
+  device.shell('rm -r /sdcard/BaiduMap/*')
+  device.shell('busybox cp -r /data/data/com.baidu.BaiduMap.bak/* /data/data/com.baidu.BaiduMap/')
+  device.shell('busybox cp -r /sdcard/BaiduMap.bak/* /sdcard/BaiduMap/')
+  device.shell('chmod -R 777 /data/data/com.baidu.BaiduMap')
+  device.shell('chmod -R 777 /sdcard/BaiduMap')
 
 operateMap(True)
 
@@ -131,16 +138,28 @@ for i in range(12):
   print "Trial %d:" % (i)
   
   if i % 2 == 0:
+    # clear and copy
     device.shell('rm -r /data/data/com.baidu.BaiduMap/*')
-    device.shell('cp -r /data/data/com.baidu.BaiduMap.bak/* /data/data/com.baidu.BaiduMap/')
-    device.shell('chmod -R a+rwx /data/data/com.baidu.BaiduMap')
+    device.shell('rm -r /sdcard/BaiduMap/*')
+    device.shell('busybox cp -r /data/data/com.baidu.BaiduMap.bak/* /data/data/com.baidu.BaiduMap/')
+    device.shell('busybox cp -r /sdcard/BaiduMap.bak/* /sdcard/BaiduMap/')
+    device.shell('chmod -R 777 /data/data/com.baidu.BaiduMap')
+    device.shell('chmod -R 777 /sdcard/BaiduMap')
     operateMap()
   else:
     device.shell('mount -t ramfs none /data/data/com.baidu.BaiduMap')
-    device.shell('chmod a+rwx /data/data/com.baidu.BaiduMap')
-    device.shell('cp -r /data/data/com.baidu.BaiduMap.bak/* /data/data/com.baidu.BaiduMap/')
-    device.shell('chmod -R a+rwx /data/data/com.baidu.BaiduMap')
+    device.shell('mount -t ramfs none /sdcard/BaiduMap')
+    device.shell('busybox cp -r /data/data/com.baidu.BaiduMap.bak/* /data/data/com.baidu.BaiduMap/')
+    device.shell('busybox cp -r /sdcard/BaiduMap.bak/* /sdcard/BaiduMap/')
+    device.shell('chmod -R 777 /data/data/com.baidu.BaiduMap')
+    device.shell('chmod -R 777 /sdcard/BaiduMap')
     operateMap()
     MonkeyRunner.sleep(1)
     device.shell('busybox fuser -mk /data/data/com.baidu.BaiduMap')
+    device.shell('busybox fuser -mk /sdcard/BaiduMap')
     device.shell('umount /data/data/com.baidu.BaiduMap')
+    device.shell('umount /sdcard/BaiduMap')
+
+if CLEAR:
+  device.shell('rm -r /data/data/com.baidu.BaiduMap')
+  device.shell('rm -r /sdcard/BaiduMap')
