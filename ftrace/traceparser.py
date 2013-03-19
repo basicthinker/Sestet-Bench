@@ -22,11 +22,10 @@ class Func:
     segs = line.split('|')
     self.time = float(segs[0])
   
-    cpu_proc_pid = segs[1].split(')')
-    self.cpu = int(cpu_proc_pid[0])
-    proc_pid = cpu_proc_pid[1].strip().split('-')
-    self.proc = proc_pid[0]
-    self.pid = int(proc_pid[1])
+    cpu_proc = segs[1].split(')')
+    self.cpu = int(cpu_proc[0])
+    self.proc = cpu_proc[1].strip(' -0123456789')
+    self.pid = int(cpu_proc[1].split('-')[-1])
     if self.proc == '<idle>': # as every processor has an idle process
       self.proc = str(self.cpu) + '-' + self.proc
     
@@ -117,7 +116,8 @@ def do_process(parent, line):
     if func.entry_name:
       # first check former unmatched function entries
       for entry in broken_entries:
-        if func.entry_name == entry.name and func.depth == entry.depth:
+        if func.entry_name == entry.name and \
+            func.pid == entry.pid and func.depth == entry.depth:
           entry.duration = func.duration
           broken_entries.remove(entry)
           return parent # as if this line is not meet
@@ -135,8 +135,12 @@ def do_process(parent, line):
         while parent.depth > func.depth: # possible partial entry
           broken_entries.append(parent)
           parent = parent.get_parent()
-        parent.duration = func.duration
-        return parent.get_parent()
+        if func.pid == parent.pid:
+          parent.duration = func.duration
+          return parent.get_parent()
+        else:
+          num_partial_exit += 1
+          return parent
   else:
     while parent.depth > func.depth - 1:
       broken_entries.append(parent)
