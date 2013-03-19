@@ -21,12 +21,19 @@ def touchDownUp(x_rate, y_rate, interval = 0.5):
     device.touch(x, y, MonkeyDevice.DOWN_AND_UP)
     return
 
-def dragVertically(y1_rate, y2_rate, duration = 0.2, steps = 2):
+def dragVertically(y1_rate, y2_rate, duration = 0.1, steps = 2):
     x = int(width * 0.5)
     y1 = int(height * y1_rate)
     y2 = int(height * y2_rate)
     device.drag((x, y1), (x, y2), duration, steps)
     return
+
+def takeSnapshot(x_rate, y_rate, w_rate, h_rate):
+    x = int(width * x_rate)
+    y = int(height * y_rate)
+    w = int(width * w_rate)
+    h = int(height * h_rate)
+    return device.takeSnapshot().getSubImage((x, y, w, h))
 
 def operateRR():
     # Launches the app
@@ -42,13 +49,20 @@ def operateRR():
     touchDownUp(0.5, 0.38)
     touchDownUp(0.5, 0.85, 2) # start
 
-    MonkeyRunner.sleep(2)
+    touchDownUp(0.3, 0.08, 2)
+    touchDownUp(0.5, 0.28)
 
     begin = time.time()
-    for t in range(5):
-        for i in range(10):
+    last = takeSnapshot(0.3, 0.35, 0.4, 0.1)
+    while True:
+        for i in range(5):
             dragVertically(0.9, 0.23)
-        print "[Sestet] \t%d \t%f" % (t + 1, time.time() - begin)
+        print "  %f" % (time.time() - begin)
+        now = takeSnapshot(0.3, 0.35, 0.4, 0.1)
+        if now.sameAs(last):
+            break
+        else:
+            last = now
     print "[Sestet] \t%f" % (begin - g_begin)
     MonkeyRunner.sleep(5)
     return
@@ -62,7 +76,7 @@ check = device.shell('cd /data/data/' + PKG_NAME_BAK)
 if check.find('can\'t') >= 0:
     device.shell('mkdir /data/data/' + PKG_NAME_BAK)
 
-for i in range(12):
+for i in range(8):
     print "Trial %d:" % (i + 1)
     check = device.shell('cd /data/data/' + PKG_NAME)
     if check.find('can\'t') < 0:

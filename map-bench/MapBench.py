@@ -7,7 +7,6 @@ APK_PATH = 'baiduditu.apk'
 IMAGE_PATH = './'
 PKG_NAME = 'com.baidu.BaiduMap'
 ACTIVITY = 'com.baidu.BaiduMap.map.mainmap.MainMapActivity'
-SATELLITE = False
 CLEAR = False
 
 # Connects to the current device, returning a MonkeyDevice object
@@ -17,7 +16,7 @@ width = int(device.getProperty("display.width"))
 height = int(device.getProperty("display.height"))
 
 # Wrapper function for touching a point down and up
-def touchDownUp(x_rate, y_rate, interval = 0.5):
+def touchDownUp(x_rate, y_rate, interval = 0.6):
   MonkeyRunner.sleep(interval)
   x = int(width * x_rate)
   y = int(height * y_rate)
@@ -32,7 +31,7 @@ def takeSnapshot():
   h = height * 0.90
   return device.takeSnapshot().getSubImage((0, y, width, h))
 
-def recordTarget(index, interval = 5):
+def recordTarget(index, interval = 3):
   MonkeyRunner.sleep(interval)
   targets[index] = takeSnapshot()
   MonkeyRunner.sleep(interval)
@@ -65,22 +64,16 @@ def operateMap(init=False):
   runComponent = PKG_NAME + '/' + ACTIVITY
   device.startActivity(component=runComponent)
   
-  if SATELLITE:
-    MonkeyRunner.sleep(0.5)
-    device.press('KEYCODE_MENU', MonkeyDevice.DOWN_AND_UP)
-    touchDownUp(0.14, 0.73)
-    touchDownUp(0.5, 0.2)
-  
   # touches the input box
-  touchDownUp(0.4, 0.08, 4)
+  touchDownUp(0.4, 0.08, 5)
   # inputs place
   MonkeyRunner.sleep(2)
   device.type("Tsinghua")
-  MonkeyRunner.sleep(5)
+  begin = time.time()
+  MonkeyRunner.sleep(3)
   
   # [0] origin
   index = 0
-  begin = time.time()
   touchDownUp(0.9, 0.17, 0)
   waitToFinish(index, init)
   print " %d\t%f" % (index, time.time() - begin)
@@ -94,21 +87,22 @@ def operateMap(init=False):
   
   for i in range(4):
     # restore
-    touchDownUp(0.92, 0.83, 0.5)
+    touchDownUp(0.92, 0.83, 0.2)
   
+  MonkeyRunner.sleep(0.2)
   for i in range(6):
     index += 1
-    touchDownUp(0.92, 0.83)
+    touchDownUp(0.92, 0.83, 0)
     waitToFinish(index, init)
     print " %d\t%f" % (index, time.time() - begin)
   
   if not init:
     print "[Sestet] \t%f" % (begin - g_begin)
   
+  MonkeyRunner.sleep(5)
   device.press('KEYCODE_MENU', MonkeyDevice.DOWN_AND_UP)
   touchDownUp(0.85, 0.84)
   touchDownUp(0.2, 0.6)
-  MonkeyRunner.sleep(5)
   return
 
 # Main
@@ -145,7 +139,9 @@ for i in range(12):
     device.shell('busybox cp -r /sdcard/BaiduMap.bak/* /sdcard/BaiduMap/')
     device.shell('chmod -R 777 /data/data/com.baidu.BaiduMap')
     device.shell('chmod -R 777 /sdcard/BaiduMap')
+    MonkeyRunner.sleep(2)
     operateMap()
+    MonkeyRunner.sleep(2)
   else:
     device.shell('mount -t ramfs none /data/data/com.baidu.BaiduMap')
     device.shell('mount -t ramfs none /sdcard/BaiduMap')
@@ -153,8 +149,9 @@ for i in range(12):
     device.shell('busybox cp -r /sdcard/BaiduMap.bak/* /sdcard/BaiduMap/')
     device.shell('chmod -R 777 /data/data/com.baidu.BaiduMap')
     device.shell('chmod -R 777 /sdcard/BaiduMap')
+    MonkeyRunner.sleep(2)
     operateMap()
-    MonkeyRunner.sleep(1)
+    MonkeyRunner.sleep(2)
     device.shell('busybox fuser -mk /data/data/com.baidu.BaiduMap')
     device.shell('busybox fuser -mk /sdcard/BaiduMap')
     device.shell('umount /data/data/com.baidu.BaiduMap')
@@ -163,3 +160,6 @@ for i in range(12):
 if CLEAR:
   device.shell('rm -r /data/data/com.baidu.BaiduMap')
   device.shell('rm -r /sdcard/BaiduMap')
+else:
+  print "Latest data are reserved."
+
