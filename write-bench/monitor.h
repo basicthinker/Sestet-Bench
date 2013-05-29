@@ -50,7 +50,7 @@ struct cpu_stat {
     ((statp)->user + (statp)->nice + (statp)->system + (statp)->idle + \
     (statp)->iowait + (statp)->irq + (statp)->softirq)
 
-static inline int cpu_util_begin(struct cpu_stat *stat) {
+static inline int cpu_util_init(struct cpu_stat *stat) {
   FILE *fp;
   fp = fopen("/proc/stat", "r");
   if (!fp) return -EIO;
@@ -63,7 +63,7 @@ static inline int cpu_util_begin(struct cpu_stat *stat) {
   return 0;
 }
 
-static inline double cpu_util_end(const struct cpu_stat *stat) {
+static inline double cpu_util(struct cpu_stat *stat) {
   struct cpu_stat cur;
   double rate;
   FILE *fp = fopen("/proc/stat", "r");
@@ -76,10 +76,12 @@ static inline double cpu_util_end(const struct cpu_stat *stat) {
   fclose(fp);
 
   rate = (double)(cur.idle - stat->idle)/(stat_sum(&cur) - stat_sum(stat));
+  *stat = cur;
   return 1 - rate;
 }
 
 static int cpu_freq(void) {
   return 1000;
 }
+
 

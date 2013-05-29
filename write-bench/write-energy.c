@@ -10,10 +10,10 @@ int main(int argc, char *argv[]) {
   outp = fopen("write-energy.log", "w");
   if (!outp) exit(-EIO);
 
-  for (i = 0; i < 100; ++i) {
-    cpu_util_begin(&stat);
+  cpu_util_init(&stat);
+  for (i = 0; i < 10; ++i) {
     sleep(10);
-    fprintf(outp, "%d - %f\n", i, cpu_util_end(&stat));
+    fprintf(outp, "%d - %f\n", i, cpu_util(&stat));
     fflush(outp);
   }
   fclose(outp);
