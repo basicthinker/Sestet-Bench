@@ -80,8 +80,17 @@ static inline double cpu_util(struct cpu_stat *stat) {
   return 1 - rate;
 }
 
-static int cpu_freq(void) {
-  return 1000;
+static int cpu_freq(uint32_t *freq, int num) {
+  char path[64];
+  int i;
+  FILE *fp;
+  for (i = 0; i < num; ++i) {
+    sprintf(path, "/sys/devices/system/cpu/cpu%d/cpufreq/scaling_cur_freq", i);
+    fp = fopen(path, "r");
+    if (!fp) break;
+    fscanf(fp, "%u", freq + i);
+    fclose(fp);
+  }
+  return i;
 }
-
 
