@@ -59,8 +59,7 @@ static inline int cpu_util_init(struct cpu_stat *stat) {
     &stat->user, &stat->nice, &stat->system, &stat->idle,
     &stat->iowait, &stat->irq, &stat->softirq);
 
-  fclose(fp);
-  return 0;
+  return fclose(fp);
 }
 
 static inline double cpu_util(struct cpu_stat *stat) {
@@ -92,5 +91,25 @@ static int cpu_freq(uint32_t *freq, int num) {
     fclose(fp);
   }
   return i;
+}
+
+#define WAKE_LOCK "write-energy-bench-wl"
+
+static int wake_lock(void) {
+  FILE *fp = fopen("/sys/power/wake_lock", "a");
+  if (!fp) {
+    return -EIO;
+  }
+  fprintf(fp, "%s", WAKE_LOCK);
+  return fclose(fp);
+}
+
+static int wake_unlock(void) {
+  FILE *fp = fopen("/sys/power/wake_unlock", "a");
+  if (!fp) {
+    return -EIO;
+  }
+  fprintf(fp, "%s", WAKE_LOCK);
+  return fclose(fp);
 }
 
