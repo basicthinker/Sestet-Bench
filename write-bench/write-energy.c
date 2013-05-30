@@ -47,21 +47,15 @@ int main(int argc, char *argv[]) {
   for (i = 0; i < TEST_NUM; ++i) {
     sprintf(file_name, "rffs-test-energy.data-%d-m", i);
     
-    fd = open(file_name, O_WRONLY | O_CREAT | O_SYNC, 0666);
-    if (fd < 0) {
-      printf("Failed to open file %s: %d\n", file_name, fd);
-      return -1;
-    }
+    fd = open(file_name, O_WRONLY | O_CREAT, 0666);
+    if (fd < 0) exit(-1000);
 
     sleep(SLEEP_TIME);
     wt_begin[ti] = get_time(&tv) - tv_begin;
     do_monit(&stat, utils + ti * 2, freqs[ti * 2]);
     for (j = 0; j < 10; ++j) {
       write(fd, content, WRITE_SIZE);
-      if (fsync(fd)) {
-        printf("Failed to fsync file %s part %d.\n", file_name, j);
-        return -2;
-      }
+      if (fsync(fd)) exit(-2000);
     }
     wt_end[ti] = get_time(&tv) - tv_begin;
     do_monit(&stat, utils + ti * 2 + 1, freqs[ti * 2 + 1]);
@@ -70,11 +64,8 @@ int main(int argc, char *argv[]) {
 
     sprintf(file_name, "rffs-test-energy.data-%d-s", i);
     
-    fd = open(file_name, O_WRONLY | O_CREAT | O_SYNC, 0666);
-    if (fd < 0) {
-      printf("Failed to open file %s: %d\n", file_name, fd);
-      return -1;
-    }
+    fd = open(file_name, O_WRONLY | O_CREAT, 0666);
+    if (fd < 0) exit(-3000);
 
     sleep(SLEEP_TIME);
     wt_begin[ti] = get_time(&tv) - tv_begin;
@@ -82,10 +73,8 @@ int main(int argc, char *argv[]) {
     for (j = 0; j < 10; ++j) {
       write(fd, content, WRITE_SIZE);
     }
-    if (fsync(fd)) {
-      printf("Failed to fsync whole file %s.\n", file_name);
-      return -2;
-    }
+    if (fsync(fd)) exit(-4000);
+    
     wt_end[ti] = get_time(&tv) - tv_begin;
     do_monit(&stat, utils + ti * 2 + 1, freqs[ti * 2 + 1]);
     ++ti;
