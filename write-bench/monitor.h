@@ -113,3 +113,15 @@ static int wake_unlock(void) {
   return fclose(fp);
 }
 
+static int set_cpufreq(uint32_t freq, int cpu) {
+  char path[64];
+  FILE *fp;
+  sprintf(path, "/sys/devices/system/cpu/cpu%d/cpufreq/scaling_setspeed", cpu);
+  fp = fopen(path, "w");
+  if (!fp) {
+    return -EIO;
+  }
+  fprintf(fp, "%u", freq);
+  return fclose(fp);
+}
+
