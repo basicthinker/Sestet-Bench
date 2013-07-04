@@ -10,13 +10,6 @@
 #define SLEEP_TIME 10
 #define WRITE_SIZE (1024 * 1024 * 4) //bytes
 
-#define sec(tv) (tv->tv_sec + (double)tv->tv_usec / 1000 / 1000)
-
-static inline double get_time(struct timeval *tv) {
-  gettimeofday(tv, NULL);
-  return sec(tv);
-}
-
 static inline void do_monit(struct cpu_stat *stat, double *util, uint32_t freqs[]) {
   int num = cpu_freq(freqs, NUM_CPU);
   while (num < NUM_CPU) freqs[num++] = 0;

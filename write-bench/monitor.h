@@ -1,4 +1,5 @@
 #include <sys/param.h>
+#include <sys/time.h>
 #include <unistd.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -34,6 +35,13 @@ static inline void init_daemon(const char *dir) {
   if (dir != NULL) {
     chdir(dir);
   }
+}
+
+#define sec(tv) (tv->tv_sec + (double)tv->tv_usec / 1000 / 1000)
+
+static inline double get_time(struct timeval *tv) {
+  gettimeofday(tv, NULL);
+  return sec(tv);
 }
 
 struct cpu_stat {
