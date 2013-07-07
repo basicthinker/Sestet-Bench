@@ -45,13 +45,13 @@ static inline double get_time(struct timeval *tv) {
 }
 
 struct cpu_stat {
-  uint64_t user;
-  uint64_t nice;
-  uint64_t system;
-  uint64_t idle;
-  uint64_t iowait;
-  uint64_t irq;
-  uint64_t softirq; 
+  long long unsigned user;
+  long long unsigned nice;
+  long long unsigned system;
+  long long unsigned idle;
+  long long unsigned iowait;
+  long long unsigned irq;
+  long long unsigned softirq; 
 };
 
 #define stat_sum(statp) \
