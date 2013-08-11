@@ -7,4 +7,4 @@ write-energy : write-energy.c monitor.h
 	$(CC) $(CFLAGS) -o write-energy.o $^
 
 clean :
-	rm -rf *.o
+	rm write-energy.o
