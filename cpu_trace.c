@@ -5,7 +5,6 @@
 int main(int argc, char *argv[]) {
   int num_smpl, is_chart, uslice;
   struct timeval tv;
-  double time;
   struct cpu_stat cpu_s;
   double cpu_u;
   int len, i;
