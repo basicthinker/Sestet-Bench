@@ -10,6 +10,9 @@
 #include <linux/input.h>
 #include <linux/uinput.h>
 
+#define likely(x)	__builtin_expect((x),1)
+#define unlikely(x)	__builtin_expect((x),0)
+
 /*
  * Fork the current process to make daemon
  * @dir: new working directory. No change with `pwd` if it is NULL.
