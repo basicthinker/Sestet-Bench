@@ -9,7 +9,7 @@ int main(int argc, char *argv[]) {
   double cpu_u;
   int len, i;
 
-  printf("%.6f\t%.2f%%\n", get_time(&tv), 0.0); // for time sync
+  printf("%.6f\n", get_time(&tv)); // for time sync
 
   if (argc != 3) {
     printf("Usage: %s SamplesPerSec ToShowCharts\n", argv[0]);
@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
     usleep(uslice);
     cpu_u = cpu_util(&cpu_s);
     len = cpu_u / 0.02;
-    printf("%.6f\t%.2f%%\t", get_time(&tv), cpu_u * 100);
+    printf("%.6f\t%.2f\t", get_time(&tv), cpu_u * 100);
     if (unlikely(is_chart)) {
       for (i = 0; i < len; ++i)
         putchar('+');
