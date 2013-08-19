@@ -1,52 +1,19 @@
-#!/system/bin/sh
+#!/bin/bash
+
+SH_DIR=/data/data/rffs
+DATA_DIR=/sdcard/rffs
 
 if [ $# -ne 2 ]; then
-	echo "Usage: $0 DirDevListFile RFFSKernelModule"
+	echo "Usage: $0 AppAlias OutputDir"
 	exit 1
 fi
 
-if [ ! -f $1 ]; then
-	echo "Failed to open specified file: $1"
-	exit 1
-fi
+app_alias=$1
+out_dir=$2
+timestamp=`date +"%F-%T"`
 
-if [ ! -f $2 ]; then
-	echo "Failed to locate kernel module file: $2"
-	exit 1
-fi
-
-args=(`cat $1`)
-nr=$((${#args[@]}/2))
-
-insmod $2
-echo 3600000 > /proc/sys/vm/dirty_writeback_centisecs
-
-i=0; while test $i -lt $nr;
-do
-	dir=${args[i*2]}
-	dev=${args[i*2+1]}
-	fuser -k $dir
-	mkdir -p $dir.bak
-	rm -r $dir.bak/* 2>/dev/null
-	cp -r $dir/* $dir.bak/
-	mount -t rffs $dev $dir
-	if [ $? -ne 0 ]; then
-		echo "Failed to mount $dev on $dir"
-		exit 2
-	else
-		rm -r $dir/* 2>/dev/null
-		cp -r $dir.bak/* $dir/
-		chmod -R 777 $dir
-		echo "$dir prepared for tracing."
-	fi
-	i=$(($i+1))
-done
-
-for log in `ls /sys/fs/rffs/ | grep log*`
-do
-	echo 1000000000 > /sys/fs/rffs/$log/staleness_limit
-        echo $log" staleness_limit="`cat /sys/fs/rffs/$log/staleness_limit`
-	echo 0 > /sys/fs/rffs/$log/staleness_sum
-        echo $log" staleness_sum="`cat /sys/fs/rffs/$log/staleness_sum`
-done
-
+adb shell "su -c '$SH_DIR/prepare_in_dev.sh $DATA_DIR/$app_alias.part $DATA_DIR/rffs.ko'"
+adb shell "su -c '$SH_DIR/ev_trace.o'" > $app_alias-ev-$timestamp.log &
+adb shell "su -c 'cat /proc/kmsg | grep rffs'" > $app_alias-kern-$timestamp.log &
+adb shell "su -c 'echo "[rffs] begin time" > /dev/kmsg; $SH_DIR/cpu_trace.o 5 0'" > $app_alias-cpu-$timestamp.log &
+cat $app_alias-cpu-$timestamp.log
