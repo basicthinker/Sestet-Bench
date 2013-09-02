@@ -8,8 +8,8 @@ if [ $# -ne 1 ]; then
 fi
 
 trace_dir=$1
-kern_data_files=`ls $trace_dir/*-kern-*.log`
-for kern_file in $kern_data_files
+kern_logs=`ls $trace_dir/*-kern-*$LOG_POST`
+for kern_file in $kern_logs
 do
   ev_file=${kern_file/'-kern-'/'-ev-'}
   cpu_file=${kern_file/'-kern-'/'-cpu-'}
