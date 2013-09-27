@@ -16,5 +16,3 @@ timestamp=`date +"%F-%T"`
 adb shell "su -c '$SH_DIR/dev_pre.sh $app eafs'"
 adb shell "su -c '$SH_DIR/ev_trace.o'" > $out_dir/$app-ev-$timestamp.log &
 adb shell "su -c 'cat /proc/kmsg | grep adafs'" > $out_dir/$app-kern-$timestamp.log &
-adb shell "su -c \"echo '[adafs-stat] begin time' > /dev/kmsg; $SH_DIR/cpu_trace.o 5 0\"" > $out_dir/$app-cpu-$timestamp.log &
-cat $out_dir/$app-cpu-$timestamp.log

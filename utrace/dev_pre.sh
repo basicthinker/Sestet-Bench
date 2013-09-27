@@ -4,7 +4,7 @@ PART_DIR=/sdcard/adafs/app-part
 KO_DIR=/sdcard/adafs/
 
 if [ $# -ne 2 ]; then
-	echo "Usage: $0 AppAlias FilesystemName"
+	echo "Usage: $0 AppAlias FilesystemName[eafs|bafs|ext4|ramfs]"
 	exit 1
 fi
 
@@ -17,19 +17,24 @@ if [ ! -f $part_file ]; then
 	exit 1
 fi
 
-if [ ! -f $KO_DIR/$fs_name.ko ]; then
-	echo "$0: Failed to locate kernel module file: $KO_DIR/$fs_name.ko"
-	exit 1
+if [ $fs_name = "eafs" ] || [ $fs_name = "bafs" ]; then
+	if [ ! -f $KO_DIR/$fs_name.ko ]; then
+		echo "$0: Failed to locate kernel module file: $KO_DIR/$fs_name.ko"
+		exit 1
+	fi
+	fs_type="adafs"
+	insmod $KO_DIR/$fs_name.ko
+else
+	fs_type=$fs_name
 fi
 
 args=(`cat $part_file`)
 nr=$((${#args[@]}/2))
 
-insmod $KO_DIR/$fs_name.ko
-echo 3600000 > /proc/sys/vm/dirty_writeback_centisecs
-if [ `cat /proc/sys/vm/dirty_writeback_centisecs` -ne '3600000' ]; then
-	echo "$0: Failed to configure dirty_writeback_centisecs!"
-	exit 2
+if [ $fs_type = "adafs" ]; then
+	echo 90 > /proc/sys/vm/dirty_background_ratio
+	echo 3600000 > /proc/sys/vm/dirty_writeback_centisecs
+	echo 'Adjusted dirty page parameters.'
 fi
 
 i=0; while test $i -lt $nr;
@@ -43,7 +48,7 @@ do
 	mkdir -p $dir.bak
 	rm -r $dir.bak/{,.[!.]}* 2>/dev/null
 	cp -r $dir/. $dir.bak/
-	mount -t adafs $dev $dir
+	mount -t $fs_type $dev $dir
 	if [ $? -ne 0 ]; then
 		echo "$0: Failed to mount $dev on $dir"
 		exit 3
@@ -56,11 +61,13 @@ do
 	i=$(($i+1))
 done
 
-for log in `ls /sys/fs/adafs/ | grep log*`
-do
-	echo 1000000000 > /sys/fs/adafs/$log/staleness_limit
-        echo "$0: $log staleness_limit="`cat /sys/fs/adafs/$log/staleness_limit`
-	echo 0 > /sys/fs/adafs/$log/staleness_sum
-        echo "$0: $log staleness_sum="`cat /sys/fs/adafs/$log/staleness_sum`
-done
+if [ -d "/sys/fs/adafs" ]; then
+	for log in `ls /sys/fs/adafs/ | grep log*`
+	do
+		echo 32768 > /sys/fs/adafs/$log/stal_limit_blocks
+        	echo "$0: $log stal_limit_blocks="`cat /sys/fs/adafs/$log/stal_limit_blocks`
+		echo 0 > /sys/fs/adafs/$log/staleness_sum
+        	echo "$0: $log staleness_sum="`cat /sys/fs/adafs/$log/staleness_sum`
+	done
+fi
 

@@ -7,6 +7,9 @@ if [ $# -ne 2 ]; then
 	exit 1
 fi
 
+echo 5 > /proc/sys/vm/dirty_background_ratio
+echo 500 > /proc/sys/vm/dirty_writeback_centisecs
+
 app=$1
 fs_name=$2
 part_file=$PART_DIR/$1.part
@@ -35,7 +38,10 @@ do
 	i=$(($i+1))
 done
 
-rmmod $fs_name
+if [ $fs_name = "eafs" ] || [ $fs_name = "bafs" ]; then
+	rmmod $fs_name
+fi
+
 if [ $? = 0 ]; then
 	echo "$0: Tracing settings cleared."
 fi
