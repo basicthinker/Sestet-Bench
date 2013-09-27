@@ -17,10 +17,12 @@ for line in log_file:
   begin = line.find("staleness")
   if begin < 0:
     continue
-  time=float(line[line.index('[') + 1:line.index(']')])
-  segs = re.split("[,=\n]", line[begin:]);
-  r = float(segs[3]) / float(segs[1])
-  print "%.3f\t%.3f\t%.3f\t%s\t%.2f" % (time - begin_time, float(segs[1])/1024, float(segs[3])/1024, segs[5], r * 100)
-
+  try:
+    time=float(line[line.index('[') + 1:line.index(']')])
+    segs = re.split("[,=\n]", line[begin:]);
+    r = float(segs[3]) / float(segs[1])
+    print "%.3f\t%.3f\t%.3f\t%s\t%.2f" % (time - begin_time, float(segs[1])/1024, float(segs[3])/1024, segs[5], r * 100)
+  except:
+    continue
 log_file.close()
 
