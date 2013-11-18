@@ -39,8 +39,14 @@ fi
 
 i=0; while test $i -lt $nr;
 do
-	dir=${args[i*2]%'/'}
+	dir=${args[i*2]%/}
 	dev=${args[i*2+1]}
+
+	par_dir=${dir%/*}
+	end_dir=${dir##*/}
+	user=`ls -l $par_dir | grep ' '$end_dir$ | awk '{print $2}'`
+	group=`ls -l $par_dir | grep ' '$end_dir$ | awk '{print $3}'`
+
 	for pid in `ps | grep $app | awk '{print $2}'`
         do
                 kill -9 $pid
@@ -55,7 +61,7 @@ do
 	else
 		rm -r $dir/{,.[!.]}* 2>/dev/null
 		cp -r $dir.bak/. $dir/
-		chmod -R 777 $dir
+		find $dir | xargs chown $user:$group
 		echo "$0: $dir prepared for tracing."
 	fi
 	i=$(($i+1))
@@ -69,5 +75,9 @@ if [ -d "/sys/fs/adafs" ]; then
 		echo 0 > /sys/fs/adafs/$log/staleness_sum
         	echo "$0: $log staleness_sum="`cat /sys/fs/adafs/$log/staleness_sum`
 	done
+	echo 1 > /sys/fs/adafs/trace/tracing_on
+        echo "tracing_on="`cat /sys/fs/adafs/trace/tracing_on`
 fi
+
+#./ev_trace.o > /cache/adafs-ev-$app.`date +"%s"` &
 

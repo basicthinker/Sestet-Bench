@@ -30,6 +30,7 @@ do
 	do
 		kill -9 $pid
 	done
+	sleep 1
 	umount $dir
 	if [ $? -ne 0 ]; then
 		echo "$0: Failed to umount: $dir"
@@ -42,7 +43,10 @@ if [ $fs_name = "eafs" ] || [ $fs_name = "bafs" ]; then
 	rmmod $fs_name
 fi
 
-if [ $? = 0 ]; then
-	echo "$0: Tracing settings cleared."
-fi
+seq=`date +"%s"`
+cp /cache/adafs.trace /sdcard/adafs/adafs-io-$app.$seq
+fsync /sdcard/adafs/adafs-io-$app.$seq
+rm /cache/adafs.trace
+
+echo "$0: Tracing settings cleared."
 
