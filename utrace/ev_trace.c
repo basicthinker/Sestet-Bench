@@ -7,16 +7,23 @@ int main(int argc, char *argv[]) {
   struct input_event event;
   int ret;
 
+  if (argc != 2) {
+    printf("Usage: %s OutputFile\n", argv[0]);
+    return -1;
+  } else {
+    freopen(argv[1], "w", stdout);
+  }
+
   evdev_start_listen(dev_name, &ev_fd, 1);
 
   while ((ret = evdev_next_input(&ev_fd, 1, &event)) >= 0) {
     if (event.type == EV_SYN && event.code == SYN_REPORT) {
-      printf("%d\t%.6f\n", ret, tv_sec(&event.time));
+      printf("%.6f\n", tv_sec(&event.time));
     }
   }
 
   if (ret < 0) {
-    printf("[ev_trace] failed to fetch input event: %d\n", ret);
+    fprintf(stderr, "[ev_trace] failed to fetch input event: %d\n", ret);
     return ret;
   } else return 0;
 }
