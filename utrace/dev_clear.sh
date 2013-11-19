@@ -44,8 +44,8 @@ if [ $fs_name = "eafs" ] || [ $fs_name = "bafs" ]; then
 fi
 
 seq=`date +"%s"`
-cp /cache/adafs.trace /sdcard/adafs/adafs-io-$app.$seq
-fsync /sdcard/adafs/adafs-io-$app.$seq
+cp /cache/adafs.trace /sdcard/adafs/$app-io-trace.$seq
+fsync /sdcard/adafs/$app-io-trace.$seq
 rm /cache/adafs.trace
 
 echo "$0: Tracing settings cleared."
