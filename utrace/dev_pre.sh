@@ -2,6 +2,7 @@
 
 PART_DIR=/sdcard/adafs/app-part
 KO_DIR=/sdcard/adafs/
+OUT_DIR=/sdcard/adafs/trace
 
 if [ $# -ne 2 ]; then
 	echo "Usage: $0 AppAlias FilesystemName[eafs|bafs|ext4|ramfs]"
@@ -79,5 +80,5 @@ if [ -d "/sys/fs/adafs" ]; then
         echo "tracing_on="`cat /sys/fs/adafs/trace/tracing_on`
 fi
 
-#./ev_trace.o > /cache/adafs-ev-$app.`date +"%s"` &
+./ev_trace.o $OUT_DIR/$app-ev-trace.`date +"%s"` &
 

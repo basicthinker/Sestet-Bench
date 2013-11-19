@@ -1,6 +1,7 @@
 #!/system/bin/sh
 
 PART_DIR=/sdcard/adafs/app-part
+OUT_DIR=/sdcard/adafs/trace
 
 if [ $# -ne 2 ]; then
 	echo "Usage: $0 AppAlias FilesystemName"
@@ -44,9 +45,12 @@ if [ $fs_name = "eafs" ] || [ $fs_name = "bafs" ]; then
 fi
 
 seq=`date +"%s"`
-cp /cache/adafs.trace /sdcard/adafs/$app-io-trace.$seq
-fsync /sdcard/adafs/$app-io-trace.$seq
+cp /cache/adafs.trace $OUT_DIR/$app-io-trace.$seq
+fsync $OUT_DIR/$app-io-trace.$seq
 rm /cache/adafs.trace
+
+pid=`ps | grep 'ev_trace.o' | awk '{print $2}'`
+kill -9 $pid
 
 echo "$0: Tracing settings cleared."
 

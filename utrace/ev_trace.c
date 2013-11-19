@@ -19,6 +19,7 @@ int main(int argc, char *argv[]) {
   while ((ret = evdev_next_input(&ev_fd, 1, &event)) >= 0) {
     if (event.type == EV_SYN && event.code == SYN_REPORT) {
       printf("%.6f\n", tv_sec(&event.time));
+      fflush(stdout);
     }
   }
 
