@@ -44,9 +44,9 @@ if [ $fs_name = "eafs" ] || [ $fs_name = "bafs" ]; then
 	rmmod $fs_name
 fi
 
-seq=`date +"%s"`
-cp /cache/adafs.trace $OUT_DIR/$app-io-trace.$seq
-fsync $OUT_DIR/$app-io-trace.$seq
+trace_fname=$app-io-`date +"%s"`.trace
+cp /cache/adafs.trace $OUT_DIR/$trace_fname
+fsync $OUT_DIR/$trace_fname
 rm /cache/adafs.trace
 
 pid=`ps | grep 'ev_trace.o' | awk '{print $2}'`

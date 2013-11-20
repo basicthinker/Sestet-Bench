@@ -1,27 +1,18 @@
 #!/bin/bash
 
-LOG_POST=".log"
-
 if [ $# -ne 1 ]; then
   echo "Usage: $0 TraceDataDirectory"
   exit 1
 fi
 
 trace_dir=$1
-kern_logs=`ls $trace_dir/*-kern-*$LOG_POST`
-for kern_file in $kern_logs
+for trace_file in `ls $trace_dir/*-io-*.trace`
 do
-  ev_file=${kern_file/'-kern-'/'-ev-'}
-#  cpu_file=${kern_file/'-kern-'/'-cpu-'}
-  python proc-kern-data.py $kern_file > .kern-data.txt
-#  python proc-cpu-data.py $cpu_file > .cpu-data.txt
-  python proc-ev-data.py $kern_file $ev_file > .ev-data.txt
+  ./simu-io-trace.out $trace_file 5 .io-plt.data .stal-ev-plt.data
   gnuplot opt-ratio.plt
-#  gnuplot ev-cpu.plt
-  mv opt-ratio.eps ${kern_file%$LOG_POST}'-opt-ratio.eps'
-#  mv ev-cpu.eps ${kern_file%$LOG_POST}'-ev-cpu.eps'
+  mv opt-ratio.eps ${trace_file/\.trace/\.eps}
   if [ $? = 0 ]; then
-    rm .kern-data.txt .ev-data.txt #.cpu-data.txt
+    rm .io-plt.data .stal-ev-plt.data
   fi
 done
 

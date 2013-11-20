@@ -6,4 +6,4 @@ set xlabel 'Staleness (KB)'
 
 plot '.io-plt.data' using 1:2 title 'Ext4' with lines, \
   '' using 1:3 title 'AdaFS' with lines, \
-  '.stal-ev-plt.data' using 1:2 title 'fsync' with impulses 
+  '.stal-ev-plt.data' using 1:2 title 'fsync' with points pt 1 

@@ -80,5 +80,5 @@ if [ -d "/sys/fs/adafs" ]; then
         echo "tracing_on="`cat /sys/fs/adafs/trace/tracing_on`
 fi
 
-./ev_trace.o $OUT_DIR/$app-ev-trace.`date +"%s"` &
+./ev_trace.o $OUT_DIR/$app-ev-`date +"%s"`.trace &
 
