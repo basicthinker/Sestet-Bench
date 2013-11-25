@@ -3,7 +3,7 @@ from com.android.monkeyrunner import MonkeyRunner, MonkeyDevice
 import time
 import sys
 
-PKG_NAME = 'com.facebook.katana'
+PKG_NAME = 'com.twitter.'
 ACTIVITY = '.LoginActivity'
 
 DEV_PRE_SCRIPT = '/data/data/adafs/dev_pre.sh facebook'
